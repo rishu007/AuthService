@@ -53,7 +53,10 @@ namespace AuthService.Controllers
             var claims = new[]
             {
             new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("Admin","true"),
+            new Claim(ClaimTypes.Role,"Admin")
+
         };
 
             var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]));

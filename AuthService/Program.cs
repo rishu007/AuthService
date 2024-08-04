@@ -22,24 +22,40 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 var key = Encoding.ASCII.GetBytes(configuration["Jwt:Key"]);
-builder.Services.AddAuthentication(x =>
-{
-    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(x =>
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddJwtBearer(options =>
         {
-            x.RequireHttpsMetadata = false;
-            x.SaveToken = true;
-            x.TokenValidationParameters = new TokenValidationParameters
+            options.RequireHttpsMetadata = false;
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuer = true,
                 ValidateAudience = false,
-                ValidIssuer= configuration["Jwt:Issuer"]
+                ValidIssuer = configuration["Jwt:Issuer"]
             };
         });
+builder.Services.AddAuthorization((options) =>
+{
+    options.AddPolicy("HasAdminClaim", policy =>
+    {
+        policy.RequireClaim("Admin", "true");
+    });
+    //no need to sepecify policy for the role claim as this can be directly sepcified in the Authorize attribute itself
+    options.AddPolicy("HasAdminRole", policy =>
+    {
+        policy.RequireRole("Admin");
+    });
+
+    options.AddPolicy("SpecificUsersPolicy", policy =>
+               policy.RequireAssertion(context =>
+               {
+                   var userName = context.User.Identity?.Name;
+                   // return userName == "Alice" || userName == "Bob";
+                   return true;
+               }));
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
